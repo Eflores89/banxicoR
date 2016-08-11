@@ -24,22 +24,6 @@ library(devtools)
 install_github("Eflores89/banxicoR")
 ```
 
-### Usage
-
-```
-# Download the Bank of Mexico international reserves
-rsv <- banxico_series(series = "SF110168")
-
-tail(rsv)
-#          DATE SF110168
-#    2016-01-01 176321.4
-#    2016-02-01 178408.8
-#    2016-03-01 179708.0
-#    2016-04-01 182118.8
-#    2016-05-01 179351.0
-#    2016-06-01 178829.9
-```
-
 ### Finding series ID's
 
 To find a specific series ID, I would recommend going to the [SIE webpage](http://www.banxico.org.mx/SieInternet/), navigating towards the desired indicators and then consulting them via HTML. The column name should be the series id (they are usually in this format: "SF60653", with two characters followed by numbers). The package includes a **small and non exhaustive** catalog of series **in spanish**. You can access this by `data("BanxicoCatalog")`.
@@ -79,3 +63,67 @@ BanxicoCatalog %>%
 #    (chr)
 #1    SM32
 ```
+
+### Usage
+Now that you have some id's to download, we can use the `banxico_series` function...
+
+```
+# Download the Bank of Mexico international reserves
+rsv <- banxico_series(series = "SF110168")
+
+tail(rsv)
+#          DATE SF110168
+#    2016-01-01 176321.4
+#    2016-02-01 178408.8
+#    2016-03-01 179708.0
+#    2016-04-01 182118.8
+#    2016-05-01 179351.0
+#    2016-06-01 178829.9
+```
+
+If you want some other fancy things, you can use the options... 
+
+```
+rsv <- banxico_series(series = "SF110168", 
+                      metadata = TRUE, 
+                      verbose = TRUE)
+# [1] "Data series: SF110168 downloaded"
+# [1] "Data series in monthly frequency"
+# [1] "Parsing data with 198 rows"
+
+class(rsv)
+# [1] "list"
+
+str(rsv)
+#List of 2
+# $ MetaData:List of 6
+#  ..$ IndicatorName: chr "I. Official Reserve Assets And Other Foreign Currency Assets - A. Official Reserve Assets"
+#  ..$ IndicatorId  : chr "SF110168"
+#  ..$ Units        : chr "millions of u.s. dollar"
+#  ..$ DataType     : chr "market value/price"
+#  ..$ Period       : chr "jan 2000 - jun 2016"
+#  ..$ Frequency    : chr "monthly"
+# $ Data    :'data.frame':	198 obs. of  2 variables:
+#  ..$ Dates   : Date[1:198], format: "2000-01-01" ...
+#  ..$ SF110168: num [1:198] 33689 33382 36435 34749 33624 ...
+```
+Finally, we can graph this... 
+
+```
+library(ggplot2)
+library(eem) # theme from: https://github.com/Eflores89/eem
+
+ggplot(rsv$Data, 
+       aes(x = Dates, y = SF110168))+
+       geom_path(colour = eem_colors[1])+
+       theme_eem()+
+       labs(x = "Dates", 
+            y = paste0("Reserves in U.S. Dollars \n (", rsv$MetaData$Units, ")"), 
+            title = "Bank of Mexico International Reserves")
+```
+
+![bank of mexico reserves](img.png)
+
+This data series is also available at INEGI and can be downloaded with [inegiR](https://github.com/Eflores89/inegiR) but Banxico has other interesting series exclusive to them, like financial loans or money in circulation, which I encourage everyone to check out!  
+
+[Tweet]() me up if you have any suggestions / improvements.
