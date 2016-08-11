@@ -91,9 +91,6 @@ rsv <- banxico_series(series = "SF110168",
 # [1] "Data series in monthly frequency"
 # [1] "Parsing data with 198 rows"
 
-class(rsv)
-# [1] "list"
-
 str(rsv)
 #List of 2
 # $ MetaData:List of 6
