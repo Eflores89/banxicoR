@@ -10,7 +10,7 @@
 
 This package is loosely based on the syntax and ideas behind [inegiR](https://github.com/Eflores89/inegiR). 
 However, the **Bank of Mexico** does not have an API, so this package basically uses `rvest` to scrape [iqy](https://support.microsoft.com/en-us/kb/157482) calls.
-These return return html tables and the package does what it can to save it in a convenient `data.frame` or `list` (same as inegiR).
+These return html tables and the package does what it can to save it in a convenient `data.frame` or `list` (same as inegiR).
 
 A few caveats:
 - I do not control the data definitions at the source (Banxico), so I can't guarantee continuos use. 
