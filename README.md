@@ -119,8 +119,8 @@ ggplot(rsv$Data,
             title = "Bank of Mexico International Reserves")
 ```
 
-![bank of mexico reserves](www.enelmargen.org/banxicoR/imgs/banxicoR_1.png)
+![bank of mexico reserves](http://enelmargen.org/banxicoR/imgs/banxicoR_1.png)
 
 This data series is also available at INEGI and can be downloaded with [inegiR](https://github.com/Eflores89/inegiR) but Banxico has other interesting series exclusive to them, like financial loans or money in circulation, which I encourage everyone to check out!  
 
-[Tweet]() me up if you have any suggestions / improvements.
+[Tweet](https://twitter.com/eflores89) me up if you have any suggestions / improvements.
