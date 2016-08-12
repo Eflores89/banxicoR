@@ -12,6 +12,8 @@ banxico_series(series, metadata = FALSE, verbose = FALSE)
 \item{metadata}{If TRUE returns list with metadata information}
 
 \item{verbose}{If TRUE prints steps while executing}
+
+\item{mask}{if TRUE names data column "value", not the id}
 }
 \value{
 data.frame

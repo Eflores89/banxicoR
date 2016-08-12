@@ -5,6 +5,7 @@
 #' @param series Series ID
 #' @param metadata If TRUE returns list with metadata information
 #' @param verbose If TRUE prints steps while executing
+#' @param mask if TRUE names data column "value", not the id
 #'
 #' @return data.frame
 #'
@@ -72,7 +73,9 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   names(e) <- gsub(pattern = "DATE",
                    replacement = "Dates",
                    x = names(e)) # make sure proper
-  
+  if(mask){
+    names(e)[names(e)!="Dates"] <- "Values"
+  }
   # ---- print update ----
   if(verbose){
     print(paste0("Parsing data with ", nrow(e), " rows"))
