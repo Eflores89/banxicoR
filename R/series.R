@@ -36,14 +36,14 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
     print(paste0("Data series: ", series, " downloaded"))
   }
   
-  # Metadata parse... 
+  # Metadata parse (careful, highly hack-ish)... 
   mtd <- str_trim(
     html_text(
       html_nodes(
         html_nodes(
           html_nodes(d, "table"), 
           "table"), 
-        "td"))) # highly hack-ish!
+        "td")))
   mtd_head <- str_trim(
     html_text(
       html_nodes(
@@ -53,8 +53,7 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
             "table"), 
           "td"), "a")))
   
-  # ! export namespace banxico::
-  frequency <- banxico_parsemeta(mtd, "frequency")
+  frequency <- banxicoR::banxico_parsemeta(mtd, "frequency")
   
   # ---- print update ----
   if(verbose){
@@ -64,14 +63,15 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   # Parse the data and fix the data.frame
   n <- length(d)
   e <- html_table(x = d[n],
-                  fill = TRUE, header = TRUE)
+                  fill = TRUE, 
+                  header = TRUE)
   e <- e[[1]] # from list
   names(e) <- gsub(pattern = "FECHA",
                    replacement = "Dates",
                    x = names(e)) # make sure english
   names(e) <- gsub(pattern = "DATE",
                    replacement = "Dates",
-                   x = names(e)) # make sure proper-ish
+                   x = names(e)) # make sure proper
   
   # ---- print update ----
   if(verbose){
@@ -88,26 +88,20 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   # Change N/E's to NA's
   e[e == "N/E"] <- NA
   
-  # if monthly
+  # Change to date formats
   if(frequency == "monthly"){
-    e[, 1] <- as.Date(x = paste0("1/",e[, 1]),
-                      format = "%d/%m/%Y")
+    e[, 1] <- as.Date(x = paste0("1/",e[, 1]), format = "%d/%m/%Y")
   }else{
-    # if daily
     if(frequency == "daily"){
-      e[, 1] <- as.Date(x = e[, 1], 
-                        format = "%m/%d/%Y")
+      e[, 1] <- as.Date(x = e[, 1], format = "%m/%d/%Y")
     }else{
       if(frequency == "annual"){
-        e[, 1] <- as.Date(x = paste0("01/01/", e[,1]), 
-                          format = "%d/%m/%Y")
+        e[, 1] <- as.Date(x = paste0("01/01/", e[,1]), format = "%d/%m/%Y")
       }else{
         if(frequency == "quarterly"){
-          # !!!! exportar namespace de banxico::
           e[,1] <- base::as.Date(unlist(lapply(X = e[,1], 
                                                FUN = function(x) {
-                                                 as.character(banxico_parsetrim(string = x, 
-                                                                                trim_begin = TRUE))
+                                                 as.character(banxicoR::banxico_parsetrim(string = x, trim_begin = TRUE))
                                                })))
         }else{
           e[,1] <- as.character(e[,1])
@@ -118,13 +112,10 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   }
   
   if(metadata){
-    # ! make sure to export as namespace these functions! 
-    
-    units <- banxico_parsemeta(mtd, "unit", exclude = FALSE)
-    datatype <- banxico_parsemeta(mtd, "data type", exclude = FALSE)
-    period <- banxico_parsemeta(mtd, "period", exclude = FALSE)
-    # To parse names, I exclude the series... 
-    names <- banxico_parsemeta(mtd_head, series, exclude = TRUE)
+    units <- banxicoR::banxico_parsemeta(mtd, "unit", exclude = FALSE)
+    datatype <- banxicoR::banxico_parsemeta(mtd, "data type", exclude = FALSE)
+    period <- banxicoR::banxico_parsemeta(mtd, "period", exclude = FALSE)
+    names <- banxicoR::banxico_parsemeta(mtd_head, series, exclude = TRUE)
     names <- stringr::str_to_title(paste0(names, collapse = " - "))
     
     l <- list("MetaData" = list("IndicatorName" = names, 
@@ -154,16 +145,16 @@ NULL
 #' @rdname helpers
 #' @export
 banxico_parsetrim <- function(string, trim_begin = TRUE){
-  y <- stringr::str_extract(string = string, 
-                            pattern = "[0-9]+")
+  y <- stringr::str_extract(string = string, pattern = "[0-9]+")
   s <- gsub(pattern = "[0-9]+", 
             replacement = "", 
             x = string,
             ignore.case = TRUE)
   s <- stringr::str_trim(s)
   
-  # warn
+  # warning
   if(s %in% c("Jan-Mar", "Apr-Jun", "Jul-Sep", "Oct-Dec")){
+    # begin trimming... 
     if(trim_begin){
       sf <- ifelse(s == "Jan-Mar" , 1, 
                    ifelse(s == "Apr-Jun", 4, 
@@ -177,11 +168,10 @@ banxico_parsetrim <- function(string, trim_begin = TRUE){
                                  ifelse(s == "Oct-Dec", 12,
                                         s))))  
     }
-    r <- as.Date(x = paste0("01/",sf, "/", y), 
-                 format = "%d/%m/%Y") 
+    r <- as.Date(x = paste0("01/",sf, "/", y), format = "%d/%m/%Y") 
   }else{
     r <- as.character(s)
-    warn("Trimester in different format, saving as character.")
+    warning("Trimester in different format, saving as character.")
   }
   return(r)
 }
@@ -191,13 +181,11 @@ banxico_parsemeta <- function(slist, lookfor, exclude = FALSE){
   if(exclude){
     s <- gsub(pattern = "^.*?: ", 
               replacement = "", 
-              x = tolower(slist[!grepl(pattern = lookfor, 
-                                       x = slist)]))
+              x = tolower(slist[!grepl(pattern = lookfor, x = slist)]))
   }else{
     s <- gsub(pattern = "^.*?: ", 
               replacement = "", 
-              x = tolower(slist[grepl(pattern = lookfor, 
-                                      x = slist)]))
+              x = tolower(slist[grepl(pattern = lookfor, x = slist)]))
   }
   s <- as.character(s)
   return(s)
