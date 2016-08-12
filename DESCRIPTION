@@ -4,6 +4,8 @@ Title: Download data from the Bank of Mexico
 Version: 0.9.0
 Author: Eduardo Flores
 Maintainer: Eduardo Flores <eduardo@enelmargen.org>
-Description: Provides functions to scrape IQY calls to Bank of Mexico, downloading and ordering the data conveniently.
+Description: Provides functions to scrape IQY calls to Bank of Mexico,
+    downloading and ordering the data conveniently.
 License: CC0
 LazyData: TRUE
+RoxygenNote: 5.0.1
