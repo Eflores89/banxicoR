@@ -10,6 +10,17 @@ banxico_parsetrim(string, trim_begin = TRUE)
 
 banxico_parsemeta(slist, lookfor, exclude = FALSE)
 }
+\arguments{
+\item{string}{x}
+
+\item{trim_begin}{y}
+
+\item{slist}{z}
+
+\item{lookfor}{m}
+
+\item{exclude}{d}
+}
 \description{
 See details
 }

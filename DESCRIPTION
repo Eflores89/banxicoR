@@ -7,5 +7,9 @@ Maintainer: Eduardo Flores <eduardo@enelmargen.org>
 Description: Provides functions to scrape IQY calls to Bank of Mexico,
     downloading and ordering the data conveniently.
 License: CC0
+Imports:
+    rvest,
+    stringr,
+    xml2
 LazyData: TRUE
 RoxygenNote: 5.0.1

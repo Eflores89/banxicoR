@@ -16,8 +16,10 @@
 #' reserves <- banxico_series("SF110168")
 #' }
 #'
-#' @importFrom rvest read_html
+#' @importFrom xml2 read_html
 #' @importFrom rvest html_table
+#' @importFrom rvest html_nodes
+#' @importFrom rvest html_text
 #' @importFrom stringr str_trim
 #' @importFrom stringr str_to_title
 #' @export
@@ -27,9 +29,9 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   s <- paste0("http://www.banxico.org.mx/SieInternet/consultasieiqy?series=",
               series, "&locale=en")
   # Download data
-  h <- read_html(x = s)
+  h <- xml2::read_html(x = s)
   
-  d <- html_nodes(x = h,
+  d <- rvest::html_nodes(x = h,
                   css = "table")
   # ---- print update ----
   if(verbose){
@@ -37,19 +39,19 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   }
   
   # Metadata parse (careful, highly hack-ish)... 
-  mtd <- str_trim(
-    html_text(
-      html_nodes(
-        html_nodes(
-          html_nodes(d, "table"), 
+  mtd <- stringr::str_trim(
+    rvest::html_text(
+      rvest::html_nodes(
+        rvest::html_nodes(
+          rvest::html_nodes(d, "table"), 
           "table"), 
         "td")))
-  mtd_head <- str_trim(
-    html_text(
-      html_nodes(
-        html_nodes(
-          html_nodes(
-            html_nodes(d, "table"), 
+  mtd_head <- stringr::str_trim(
+    rvest::html_text(
+      rvest::html_nodes(
+        rvest::html_nodes(
+          rvest::html_nodes(
+            rvest::html_nodes(d, "table"), 
             "table"), 
           "td"), "a")))
   
@@ -62,9 +64,7 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   
   # Parse the data and fix the data.frame
   n <- length(d)
-  e <- html_table(x = d[n],
-                  fill = TRUE, 
-                  header = TRUE)
+  e <- rvest::html_table(x = d[n], fill = TRUE, header = TRUE)
   e <- e[[1]] # from list
   names(e) <- gsub(pattern = "FECHA",
                    replacement = "Dates",
@@ -90,13 +90,13 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
   
   # Change to date formats
   if(frequency == "monthly"){
-    e[, 1] <- as.Date(x = paste0("1/",e[, 1]), format = "%d/%m/%Y")
+    e[, 1] <- base::as.Date(x = paste0("1/",e[, 1]), format = "%d/%m/%Y")
   }else{
     if(frequency == "daily"){
-      e[, 1] <- as.Date(x = e[, 1], format = "%m/%d/%Y")
+      e[, 1] <- base::as.Date(x = e[, 1], format = "%m/%d/%Y")
     }else{
       if(frequency == "annual"){
-        e[, 1] <- as.Date(x = paste0("01/01/", e[,1]), format = "%d/%m/%Y")
+        e[, 1] <- base::as.Date(x = paste0("01/01/", e[,1]), format = "%d/%m/%Y")
       }else{
         if(frequency == "quarterly"){
           e[,1] <- base::as.Date(unlist(lapply(X = e[,1], 
@@ -135,6 +135,12 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE){
 #' See details
 #' @details \code{banxico_parsetrim} translates banxico trimesters to dates. 
 #' \code{banxico_parsemeta} extracts metadata from banxico iqy call.
+#' 
+#' @param string x
+#' @param trim_begin y
+#' @param slist z
+#' @param lookfor m
+#' @param exclude d
 #' 
 #' @importFrom stringr str_extract
 #' @importFrom stringr str_trim
