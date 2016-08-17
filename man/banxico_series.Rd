@@ -4,7 +4,7 @@
 \alias{banxico_series}
 \title{Returns data series from BANXICO}
 \usage{
-banxico_series(series, metadata = FALSE, verbose = FALSE)
+banxico_series(series, metadata = FALSE, verbose = FALSE, mask = FALSE)
 }
 \arguments{
 \item{series}{Series ID}

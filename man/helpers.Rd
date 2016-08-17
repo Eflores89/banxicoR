@@ -25,7 +25,12 @@ banxico_parsemeta(slist, lookfor, exclude = FALSE)
 See details
 }
 \details{
-\code{banxico_parsetrim} translates banxico trimesters to dates. 
+\code{banxico_parsetrim} translates banxico trimesters to dates.
 \code{banxico_parsemeta} extracts metadata from banxico iqy call.
+}
+\examples{
+# trimester
+string <- "Jan-Mar 2015"
+trim <- banxico_parsetrim(string)
 }
 
