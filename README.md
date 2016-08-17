@@ -2,9 +2,6 @@
 
 *An R interface to download data from Banxico's (Bank of Mexico) SIE (Sistema de Información Económica)*
 
------
-## :construction: Still under development :construction:
------
 
 ### Introduction 
 
