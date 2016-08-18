@@ -17,8 +17,7 @@ A few caveats:
 ### Installation
 
 ```
-library(devtools)
-install_github("Eflores89/banxicoR")
+install.packages("banxicoR")
 ```
 
 ### Finding series ID's
