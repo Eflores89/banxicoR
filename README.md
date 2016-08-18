@@ -1,5 +1,7 @@
 # banxicoR 
 
+[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/banxicoR)](http://cran.r-project.org/package=banxicoR) ![downloads](http://cranlogs.r-pkg.org/badges/grand-total/banxicoR)
+
 *An R interface to download data from Banxico's (Bank of Mexico) SIE (Sistema de Información Económica)*
 
 
