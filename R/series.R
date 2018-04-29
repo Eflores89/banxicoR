@@ -154,6 +154,9 @@ banxico_series2 <- function(series, token, metadata = FALSE, mask = FALSE){
   d$dato <- gsub(pattern = ",", replacement = "", x = d$dato)
   d$dato <- as.numeric(d$dato)
   
+  # change dates 
+  d$fecha <- as.Date(d$fecha, format = "%d/%m/%Y")
+  
   # change names 
   names(d)[names(d) == "fecha"] <- "Date"
   names(d)[names(d) == "dato"] <- "Value"
