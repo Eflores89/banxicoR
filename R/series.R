@@ -1,10 +1,10 @@
 #' Returns data series from BANXICO
 #'
-#' Returns data.frame with BANXICO data series
+#' Returns data.frame with BANXICO data series. Use banxico_series2 for the new API (Beta mode).
 #'
 #' @param series Series ID
 #' @param metadata If TRUE returns list with metadata information
-#' @param verbose If TRUE prints steps while executing
+#' @param verbose If TRUE prints steps while executing. Not available for banxico_series2
 #' @param mask if TRUE names data column "value", not the id
 #'
 #' @return data.frame
@@ -23,6 +23,11 @@
 #' @importFrom rvest html_text
 #' @importFrom stringr str_trim
 #' @importFrom stringr str_to_title
+#' @importFrom jsonlite fromJSON
+#' @name series
+NULL
+
+#' @rdname series
 #' @export
 banxico_series <- function(series, metadata = FALSE, verbose = FALSE, mask = FALSE){
   # 0. Build data series
@@ -133,6 +138,34 @@ banxico_series <- function(series, metadata = FALSE, verbose = FALSE, mask = FAL
     return(as.data.frame(e))
   }
 }
+#' @rdname series
+#' @export
+banxico_series2 <- function(series, token, metadata = FALSE, mask = FALSE){
+  p <- paste0("https://www.banxico.org.mx/SieAPIRest/service/v1/series/", series,"/datos?token=",token)
+  s <- fromJSON(p, flatten = T)
+  title <- as.character(s$bmx$series$titulo)
+  d <- as.data.frame(s$bmx$series$datos)
+  
+  
+  # cut out no numbers
+  d <- d[!grepl(pattern = "N/E", x = d$dato, ignore.case = T), ]
+  
+  # clean numbers ... 
+  d$dato <- gsub(pattern = ",", replacement = "", x = d$dato)
+  d$dato <- as.numeric(d$dato)
+  
+  # change names 
+  names(d)[names(d) == "fecha"] <- "Date"
+  names(d)[names(d) == "dato"] <- "Value"
+  
+  if(metadata){
+    d$Name <- title
+  }
+  if(!mask){
+    names(d)[names(d)=="Value"] <- as.character(series)
+  }
+  return(d)
+}
 #' Helper functions for banxico series
 #'
 #' See details
@@ -226,3 +259,4 @@ compact_banxico_series <- function(series){
   dat$Frequency <- d$MetaData$Frequency
   return(dat)
 }
+
