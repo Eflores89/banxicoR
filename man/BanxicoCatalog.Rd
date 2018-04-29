@@ -23,4 +23,3 @@ BanxicoCatalog
 A dataset containing the id's for some Banxico series.
 }
 \keyword{datasets}
-

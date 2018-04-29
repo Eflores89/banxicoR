@@ -21,4 +21,3 @@ df <- compact_banxico_series("SF110168")
 \author{
 Eduardo Flores
 }
-
