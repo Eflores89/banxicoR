@@ -6,7 +6,8 @@ bmx_mock <- function(mock, code) httr2::with_mocked_responses(mock, code)
 
 test_that("transport builds authenticated HTTPS requests and orders records", {
   result <- bmx_mock(function(req) {
-    expect_identical(req$url, "https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF1,SF2/datos?locale=en")
+    # libcurl versions may percent-encode the comma separating series IDs.
+    expect_identical(utils::URLdecode(req$url), "https://www.banxico.org.mx/SieAPIRest/service/v1/series/SF1,SF2/datos?locale=en")
     expect_identical(unname(req$headers[["Bmx-Token"]]), "explicit-token")
     expect_identical(unname(req$headers[["Accept"]]), "application/json")
     expect_equal(req$options$timeout_ms, 30000)
@@ -23,7 +24,7 @@ test_that("fetch batches at twenty and preserves complete order", {
     ids <- paste0("SF", seq_len(n))
     out <- bmx_mock(function(req) {
       calls <<- calls + 1L
-      batch <- strsplit(sub(".*series/([^/?]+).*", "\\1", req$url), ",", fixed = TRUE)[[1]]
+      batch <- strsplit(sub(".*series/([^/?]+).*", "\\1", utils::URLdecode(req$url)), ",", fixed = TRUE)[[1]]
       expect_lte(length(batch), 20)
       bmx_response(lapply(rev(batch), bmx_fixture))
     }, bmx_fetch(ids, "", "token", "es"))
