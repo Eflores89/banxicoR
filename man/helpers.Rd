@@ -11,22 +11,29 @@ banxico_parsetrim(string, trim_begin = TRUE)
 banxico_parsemeta(slist, lookfor, exclude = FALSE)
 }
 \arguments{
-\item{string}{x}
+\item{string}{A single quarterly label such as \code{"Jan-Mar 2015"}.}
 
-\item{trim_begin}{y}
+\item{trim_begin}{Logical; select the quarter's first month when TRUE.}
 
-\item{slist}{z}
+\item{slist}{Character vector of legacy metadata lines.}
 
-\item{lookfor}{m}
+\item{lookfor}{Regular expression selecting metadata lines.}
 
-\item{exclude}{d}
+\item{exclude}{Logical; exclude matching lines when TRUE.}
+}
+\value{
+\code{banxico_parsetrim()} returns a Date for recognized labels, otherwise
+character text. \code{banxico_parsemeta()} returns lowercase character values
+with the text preceding the first colon removed.
 }
 \description{
-See details
+Retained helpers for historical quarterly labels and IQY metadata text.
+These helpers do not contact the API.
 }
 \details{
-\code{banxico_parsetrim} translates banxico trimesters to dates.
-\code{banxico_parsemeta} extracts metadata from banxico iqy call.
+With \code{trim_begin = FALSE}, the quarterly helper returns the first
+day of the quarter's final month, not the quarter's last calendar day.
+Unrecognized labels warn and return their nonnumeric text.
 }
 \examples{
 # trimester

@@ -2,21 +2,33 @@
 % Please edit documentation in R/series.R
 \name{compact_banxico_series}
 \alias{compact_banxico_series}
-\title{Compacts data and metadata into a data.frame}
+\title{Compact legacy observations and metadata}
 \usage{
-compact_banxico_series(series)
+compact_banxico_series(
+  series,
+  token = banxico_get_token(),
+  start_date = NULL,
+  end_date = NULL,
+  language = "es"
+)
 }
 \arguments{
-\item{series}{series ID}
+\item{series}{A single character series identifier.}
+
+\item{token}{API token, defaulting to \code{\link[=banxico_get_token]{banxico_get_token()}}.}
+
+\item{start_date, end_date}{Inclusive scalar Date or ISO YYYY-MM-DD bounds.}
+
+\item{language}{API locale, either "es" or "en".}
+}
+\value{
+A data.frame with Dates, an ID-named numeric value column, and
+IndicatorName, IndicatorId, Units, DataType, Period and Frequency repeated
+per observation. Unavailable metadata is NA; empty data has zero rows.
 }
 \description{
-Returns data.frame with metadata and data from \code{banxico_series()} in data.frame form. Each metadata data is replicated in its corresponding column.
-}
-\examples{
-\dontrun{
-df <- compact_banxico_series("SF110168")
-}
-
+Uses \code{\link[=banxico_series]{banxico_series()}} with metadata requested explicitly. Configure
+BANXICO_TOKEN or use \code{\link[=banxico_set_token]{banxico_set_token()}} before calling without a token.
 }
 \author{
 Eduardo Flores

@@ -1,185 +1,91 @@
-#' Returns data series from BANXICO
+#' Returns data series from Banxico using the SIE REST API
 #'
-#' Returns data.frame with BANXICO data series. Use banxico_series2 for the new API (Beta mode).
-#'
-#' @param series Series ID
-#' @param metadata If TRUE returns list with metadata information
-#' @param verbose If TRUE prints steps while executing. Not available for banxico_series2
-#' @param mask if TRUE names data column "value", not the id
-#'
-#' @return data.frame
-#'
+#' Legacy adapters retain their original column names and argument positions.
+#' API access now requires a token: set BANXICO_TOKEN or call
+#' [banxico_set_token()]. For multiple series and raw values use [banxico_data()].
+#' @param series A single character series identifier.
+#' @param metadata Logical; include legacy metadata (or Name in banxico_series2).
+#' @param verbose Logical; print a safe observation count after retrieval.
+#' @param mask Logical; use Values or Value instead of an ID-named value column.
+#' @param token API token, defaulting to [banxico_get_token()].
+#' @param start_date,end_date Inclusive scalar Date or ISO YYYY-MM-DD bounds.
+#' @param language API locale, either "es" or "en".
+#' @return banxico_series returns Dates and an ID-named numeric column (Values
+#'   when masked), or a list with MetaData and Data. MetaData contains
+#'   IndicatorName, IndicatorId, Units, DataType, Period and Frequency; fields
+#'   unavailable from the API are NA. banxico_series2 returns Date and an
+#'   ID-named numeric column (Value when masked), plus Name if requested.
+#'   Missing observations remain rows with NA values.
 #' @author Eduardo Flores
-#'
-#' @examples
-#' # Bank of Mexico international reserves
-#' \dontrun{
-#' reserves <- banxico_series("SF110168")
-#' }
-#'
-#' @importFrom xml2 read_html
-#' @importFrom rvest html_table
-#' @importFrom rvest html_nodes
-#' @importFrom rvest html_text
-#' @importFrom stringr str_trim
-#' @importFrom stringr str_to_title
-#' @importFrom jsonlite fromJSON
 #' @name series
 NULL
 
 #' @rdname series
 #' @export
-banxico_series <- function(series, metadata = FALSE, verbose = FALSE, mask = FALSE){
-  # 0. Build data series
-  s <- as.character(series)
-  s <- paste0("http://www.banxico.org.mx/SieInternet/consultasieiqy?series=",
-              series, "&locale=en")
-  # Download data
-  h <- xml2::read_html(x = s)
-
-  d <- rvest::html_nodes(x = h,
-                  css = "table")
-  # ---- print update ----
-  if(verbose){
-    print(paste0("Data series: ", series, " downloaded"))
-  }
-
-  # Metadata parse (careful, highly hack-ish)...
-  mtd <- stringr::str_trim(
-    rvest::html_text(
-      rvest::html_nodes(
-        rvest::html_nodes(
-          rvest::html_nodes(d, "table"),
-          "table"),
-        "td")))
-  mtd_head <- stringr::str_trim(
-    rvest::html_text(
-      rvest::html_nodes(
-        rvest::html_nodes(
-          rvest::html_nodes(
-            rvest::html_nodes(d, "table"),
-            "table"),
-          "td"), "a")))
-
-  frequency <- banxicoR::banxico_parsemeta(mtd, "frequency")
-
-  # ---- print update ----
-  if(verbose){
-    print(paste0("Data series in ", frequency, " frequency"))
-  }
-
-  # Parse the data and fix the data.frame
-  n <- length(d)
-  e <- rvest::html_table(x = d[n], fill = TRUE, header = TRUE)
-  e <- e[[1]] # from list
-  names(e) <- gsub(pattern = "FECHA",
-                   replacement = "Dates",
-                   x = names(e)) # make sure english
-  names(e) <- gsub(pattern = "DATE",
-                   replacement = "Dates",
-                   x = names(e)) # make sure proper
-  if(mask){
-    names(e)[names(e)!="Dates"] <- "Values"
-  }
-  # ---- print update ----
-  if(verbose){
-    print(paste0("Parsing data with ", nrow(e), " rows"))
-  }
-
-  # Now, the formats
-  e[, 2] <- gsub(
-    pattern = ",",
-    replacement = "",
-    x = e[, 2])
-  e[, 2] <- as.numeric(e[, 2])
-
-  # Change N/E's to NA's
-  e[e == "N/E"] <- NA
-
-  # Change to date formats
-  if(frequency == "monthly"){
-    e[, 1] <- base::as.Date(x = paste0("1/",e[, 1]), format = "%d/%m/%Y")
-  }else{
-    if(frequency == "daily"){
-      e[, 1] <- base::as.Date(x = e[, 1], format = "%m/%d/%Y")
-    }else{
-      if(frequency == "annual"){
-        e[, 1] <- base::as.Date(x = paste0("01/01/", e[,1]), format = "%d/%m/%Y")
-      }else{
-        if(frequency == "quarterly"){
-          e[,1] <- base::as.Date(unlist(lapply(X = e[,1],
-                                               FUN = function(x) {
-                                                 as.character(banxicoR::banxico_parsetrim(string = x, trim_begin = TRUE))
-                                               })))
-        }else{
-          e[,1] <- as.character(e[,1])
-          warning("Frequency not supported. Saving as character.")
-        }
-      }
-    }
-  }
-
-  if(metadata){
-    units <- banxicoR::banxico_parsemeta(mtd, "unit", exclude = FALSE)
-    datatype <- banxicoR::banxico_parsemeta(mtd, "data type", exclude = FALSE)
-    period <- banxicoR::banxico_parsemeta(mtd, "period", exclude = FALSE)
-    names <- banxicoR::banxico_parsemeta(mtd_head, series, exclude = TRUE)
-    names <- stringr::str_to_title(paste0(names, collapse = " - "))
-
-    l <- list("MetaData" = list("IndicatorName" = names,
-                                "IndicatorId" = series,
-                                "Units" = units,
-                                "DataType" = datatype,
-                                "Period" = period,
-                                "Frequency" = frequency),
-              "Data" = as.data.frame(e))
-    return(l)
-  }else{
-    return(as.data.frame(e))
-  }
+banxico_series <- function(series, metadata = FALSE, verbose = FALSE, mask = FALSE,
+                           token = banxico_get_token(), start_date = NULL,
+                           end_date = NULL, language = "es") {
+  id <- bmx_legacy_id(series)
+  bmx_flag(metadata, "metadata")
+  bmx_flag(verbose, "verbose")
+  bmx_flag(mask, "mask")
+  out <- banxico_data(id, start_date, end_date, token, language)
+  dat <- data.frame(Dates = out$date, Values = out$value)
+  if (!mask) names(dat)[2] <- id
+  if (verbose) message("Downloaded ", nrow(dat), " observations.")
+  if (!metadata) return(dat)
+  meta <- banxico_metadata(id, token, language)
+  list(MetaData = list(IndicatorName = meta$title[[1]], IndicatorId = id,
+    Units = NA_character_, DataType = NA_character_, Period = NA_character_,
+    Frequency = NA_character_), Data = dat)
 }
+
 #' @rdname series
 #' @export
-banxico_series2 <- function(series, token, metadata = FALSE, mask = FALSE){
-  p <- paste0("https://www.banxico.org.mx/SieAPIRest/service/v1/series/", series,"/datos?token=",token)
-  s <- fromJSON(p, flatten = T)
-  title <- as.character(s$bmx$series$titulo)
-  d <- as.data.frame(s$bmx$series$datos)
-  
-  
-  # cut out no numbers
-  d <- d[!grepl(pattern = "N/E", x = d$dato, ignore.case = T), ]
-  
-  # clean numbers ... 
-  d$dato <- gsub(pattern = ",", replacement = "", x = d$dato)
-  d$dato <- as.numeric(d$dato)
-  
-  # change dates 
-  d$fecha <- as.Date(d$fecha, format = "%d/%m/%Y")
-  
-  # change names 
-  names(d)[names(d) == "fecha"] <- "Date"
-  names(d)[names(d) == "dato"] <- "Value"
-  
-  if(metadata){
-    d$Name <- title
-  }
-  if(!mask){
-    names(d)[names(d)=="Value"] <- as.character(series)
-  }
-  return(d)
+banxico_series2 <- function(series, token = banxico_get_token(), metadata = FALSE,
+                            mask = FALSE, start_date = NULL, end_date = NULL,
+                            language = "es") {
+  id <- bmx_legacy_id(series)
+  bmx_flag(metadata, "metadata")
+  bmx_flag(mask, "mask")
+  out <- banxico_data(id, start_date, end_date, token, language)
+  dat <- data.frame(Date = out$date, Value = out$value)
+  if (!mask) names(dat)[2] <- id
+  if (metadata) dat$Name <- out$title
+  dat
 }
+
+bmx_legacy_id <- function(series) {
+  ids <- bmx_ids(series)
+  if (length(series) != 1L) {
+    bmx_abort("Legacy adapters require one series; use banxico_data() for multiple series.", "input")
+  }
+  ids
+}
+
+bmx_flag <- function(x, name) {
+  if (!is.logical(x) || length(x) != 1L || is.na(x)) {
+    bmx_abort(paste0(name, " must be TRUE or FALSE."), "input")
+  }
+  invisible(x)
+}
+
 #' Helper functions for banxico series
 #'
-#' See details
-#' @details \code{banxico_parsetrim} translates banxico trimesters to dates.
-#' \code{banxico_parsemeta} extracts metadata from banxico iqy call.
+#' Retained helpers for historical quarterly labels and IQY metadata text.
+#' These helpers do not contact the API.
+#' @details With `trim_begin = FALSE`, the quarterly helper returns the first
+#'   day of the quarter's final month, not the quarter's last calendar day.
+#'   Unrecognized labels warn and return their nonnumeric text.
 #'
-#' @param string x
-#' @param trim_begin y
-#' @param slist z
-#' @param lookfor m
-#' @param exclude d
+#' @param string A single quarterly label such as `"Jan-Mar 2015"`.
+#' @param trim_begin Logical; select the quarter's first month when TRUE.
+#' @param slist Character vector of legacy metadata lines.
+#' @param lookfor Regular expression selecting metadata lines.
+#' @param exclude Logical; exclude matching lines when TRUE.
+#' @return `banxico_parsetrim()` returns a Date for recognized labels, otherwise
+#'   character text. `banxico_parsemeta()` returns lowercase character values
+#'   with the text preceding the first colon removed.
 #'
 #' @importFrom stringr str_extract
 #' @importFrom stringr str_trim
@@ -238,28 +144,27 @@ banxico_parsemeta <- function(slist, lookfor, exclude = FALSE){
   s <- as.character(s)
   return(s)
 }
-#' Compacts data and metadata into a data.frame
+#' Compact legacy observations and metadata
 #'
-#' Returns data.frame with metadata and data from \code{banxico_series()} in data.frame form. Each metadata data is replicated in its corresponding column.
-#'
-#' @param series series ID
-#'
+#' Uses [banxico_series()] with metadata requested explicitly. Configure
+#' BANXICO_TOKEN or use [banxico_set_token()] before calling without a token.
+#' @param series A single character series identifier.
+#' @param token API token, defaulting to [banxico_get_token()].
+#' @param start_date,end_date Inclusive scalar Date or ISO YYYY-MM-DD bounds.
+#' @param language API locale, either "es" or "en".
+#' @return A data.frame with Dates, an ID-named numeric value column, and
+#'   IndicatorName, IndicatorId, Units, DataType, Period and Frequency repeated
+#'   per observation. Unavailable metadata is NA; empty data has zero rows.
 #' @author Eduardo Flores
-#' @examples
-#' \dontrun{
-#' df <- compact_banxico_series("SF110168")
-#' }
-#'
 #' @export
-compact_banxico_series <- function(series){
-  d <- banxicoR::banxico_series(series = series, metadata = TRUE)
-  dat <- d$Data
-  dat$IndicatorName <- d$MetaData$IndicatorName
-  dat$IndicatorId <- d$MetaData$IndicatorId
-  dat$Units <- d$MetaData$Units
-  dat$DataType <- d$MetaData$DataType
-  dat$Period <- d$MetaData$Period
-  dat$Frequency <- d$MetaData$Frequency
-  return(dat)
+compact_banxico_series <- function(series, token = banxico_get_token(),
+                                   start_date = NULL, end_date = NULL,
+                                   language = "es") {
+  out <- banxico_series(series, metadata = TRUE, token = token,
+    start_date = start_date, end_date = end_date, language = language)
+  dat <- out$Data
+  for (field in names(out$MetaData)) {
+    dat[[field]] <- rep(out$MetaData[[field]], nrow(dat))
+  }
+  dat
 }
-

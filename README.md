@@ -1,124 +1,102 @@
-# banxicoR 
+# banxicoR
 
-[![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/banxicoR)](http://cran.r-project.org/package=banxicoR) ![downloads](http://cranlogs.r-pkg.org/badges/grand-total/banxicoR)
+[![R-CMD-check](https://github.com/jadrk040507/banxicoR/actions/workflows/R-CMD-check.yaml/badge.svg?branch=master)](https://github.com/jadrk040507/banxicoR/actions/workflows/R-CMD-check.yaml)
 
-*An R interface to download data from Banxico's (Bank of Mexico) SIE (Sistema de Información Económica)*
+CI checks five OS/R combinations with offline tests and retains check logs and
+session versions. See [CI scope and evidence](docs/ci.md). Live Banxico API
+validation remains separate.
 
+Development contribution, version 0.9.0.9000, based on Eduardo Flores's CC0
+[banxicoR](https://github.com/Eflores89/banxicoR). This version uses Banxico's
+SIE REST API. The development fork is [jadrk040507/banxicoR](https://github.com/jadrk040507/banxicoR).
+It has not been released on CRAN or accepted upstream. Source attribution
+and catalog provenance are recorded in [docs/upstream.md](docs/upstream.md).
 
-### Introduction 
+## English quick start
 
-This package is loosely based on the syntax and ideas behind [inegiR](https://github.com/Eflores89/inegiR). 
-However, the **Bank of Mexico** does not have an API, so this package basically uses `rvest` to scrape [iqy](https://support.microsoft.com/en-us/kb/157482) calls.
-These return html tables and the package does what it can to save it in a convenient `data.frame` or `list` (same as inegiR).
+Install the development contribution from GitHub:
 
-A few caveats:
-- I do not control the data definitions at the source (Banxico), so I can't guarantee continuos use. 
-- Finding the ID of each series has proven a manual, slow and tedious process because they are not available in the webpage. I'm trying to contact Banxico about getting a catalog, and I'll probably save a dataset in the package, but a lot of indicators will probably be missing. Use at your own risk. 
-
-
-### Installation
-
+```r
+# install.packages("remotes")
+remotes::install_github("jadrk040507/banxicoR")
 ```
-install.packages("banxicoR")
-```
 
-### Finding series ID's
+Alternatively, build and install the local source with `R CMD build .` and then
+`R CMD INSTALL banxicoR_0.9.0.9000.tar.gz` into your chosen library.
+Register for a personal token at the
+[Banxico SIE API portal](https://www.banxico.org.mx/SieAPIRest/).
+Configure `BANXICO_TOKEN` in your local environment before starting R; alternatively
+call `banxico_set_token()` with a securely obtained token for the current session.
+Keep credentials out of scripts and version control. The token is sent in the
+`Bmx-Token` header, never in the URL. No live request is made by these docs.
 
-To find a specific series ID, I would recommend going to the [SIE webpage](http://www.banxico.org.mx/SieInternet/), navigating towards the desired indicators and then consulting them via HTML. The column name should be the series id (they are usually in this format: "SF60653", with two characters followed by numbers). The package includes a **small and non exhaustive** catalog of series **in spanish**. You can access this by `data("BanxicoCatalog")`.
-
-
-Then you can find some id's...
-
-```
+```r
 library(banxicoR)
-library(dplyr)
+# Requires your own locally configured BANXICO_TOKEN:
+x <- banxico_data(c("SF43718", "SF110168"),
+                  start_date = "2025-01-01", end_date = "2025-12-31")
+latest <- banxico_latest("SF43718")
+metadata <- banxico_metadata("SF43718")
 data("BanxicoCatalog")
-
-# To see how many id's by parent subject 
-BanxicoCatalog %>% 
-  group_by(PARENT) %>% 
-  summarise("Id's" = n())
-
-# Source: local data frame [4 x 2]
-
-#                       PARENT     Id's
-#                       (chr)     (int)
-#  1          Billetes y Monedas    45
-#  2 Intermediarios Financierios    37
-#  3            Sistemas de Pago    49
-#  4              Tipo de Cambio     2
-
-# to bring the specific id of the average duration of 200 peso bills...
-BanxicoCatalog %>% 
-  filter(PARENT == "Billetes y Monedas") %>% 
-  filter(LEVEL_1 == "Duración promedio del billete") %>% 
-  filter(LEVEL_2 == "200 pesos") %>% 
-  select(ID)
-
-# Source: local data frame [1 x 1]
-
-#      ID
-#    (chr)
-#1    SM32
+head(BanxicoCatalog)
 ```
 
-### Usage
-Now that you have some id's to download, we can use the `banxico_series` function...
+The long-format columns are `provider`, `series_id`, `title`, `period`, `date`,
+`value`, `value_raw`. `date` is an R Date parsed from the API's calendar date;
+`period` preserves its exact text, and `value_raw` preserves the original value.
+Unavailable observations remain rows with `NA_real_` values. Metadata requests
+are explicit. The preserved Spanish catalog is historical and nonexhaustive;
+it is not a current API catalog.
 
-```
-# Download the Bank of Mexico international reserves
-rsv <- banxico_series(series = "SF110168")
+## Migration from IQY scraping
 
-tail(rsv)
-#          DATE SF110168
-#    2016-01-01 176321.4
-#    2016-02-01 178408.8
-#    2016-03-01 179708.0
-#    2016-04-01 182118.8
-#    2016-05-01 179351.0
-#    2016-06-01 178829.9
-```
+Calls now require a registered API token, including the legacy adapters.
+The five legacy exports and their positional arguments remain available.
+`banxico_series()` returns `Dates` and an ID-named value column (`Values` with
+`mask = TRUE`); `metadata = TRUE` returns `MetaData` and `Data`.
+`banxico_series2()` returns `Date` (singular), an ID-named column (`Value` when
+masked), and optionally `Name`. `compact_banxico_series()` repeats legacy
+metadata per observation. Units, DataType, Period and Frequency unavailable from
+the API are `NA`; they are not inferred from the historical scraper.
+`banxico_parsetrim()` and `banxico_parsemeta()` remain historical text helpers.
 
-If you want some other fancy things, you can use the options... 
-
-```
-rsv <- banxico_series(series = "SF110168", 
-                      metadata = TRUE, 
-                      verbose = TRUE)
-# [1] "Data series: SF110168 downloaded"
-# [1] "Data series in monthly frequency"
-# [1] "Parsing data with 198 rows"
-
-str(rsv)
-#List of 2
-# $ MetaData:List of 6
-#  ..$ IndicatorName: chr "I. Official Reserve Assets And Other Foreign Currency Assets - A. Official Reserve Assets"
-#  ..$ IndicatorId  : chr "SF110168"
-#  ..$ Units        : chr "millions of u.s. dollar"
-#  ..$ DataType     : chr "market value/price"
-#  ..$ Period       : chr "jan 2000 - jun 2016"
-#  ..$ Frequency    : chr "monthly"
-# $ Data    :'data.frame':	198 obs. of  2 variables:
-#  ..$ Dates   : Date[1:198], format: "2000-01-01" ...
-#  ..$ SF110168: num [1:198] 33689 33382 36435 34749 33624 ...
-```
-Finally, we can graph this... 
-
-```
-library(ggplot2)
-library(eem) # theme from: https://github.com/Eflores89/eem
-
-ggplot(rsv$Data, 
-       aes(x = Dates, y = SF110168))+
-       geom_path(colour = eem_colors[1])+
-       theme_eem()+
-       labs(x = "Dates", 
-            y = paste0("Reserves in U.S. Dollars \n (", rsv$MetaData$Units, ")"), 
-            title = "Bank of Mexico International Reserves")
+```r
+# Requires BANXICO_TOKEN:
+legacy <- banxico_series("SF43718", metadata = TRUE, mask = TRUE)
+modern <- banxico_data("SF43718")
+plot(modern$date, modern$value, type = "l")
 ```
 
-![bank of mexico reserves](http://enelmargen.org/banxicoR/imgs/banxicoR_1.png)
+Requests batch at most 20 IDs, use a 30-second timeout per attempt and at most
+three attempts, with capped retry sleeps of 10 seconds. The retry scheduling
+deadline is soft; it is not a hard whole-call timeout. Errors inherit
+`banxico_error` and a category class: `banxico_input_error`,
+`banxico_authentication_error`, `banxico_http_error`, `banxico_connection_error`,
+or `banxico_response_error`. Tests run offline; live authentication and timing
+remain unverified without a user-provided token.
 
-This data series is also available at INEGI and can be downloaded with [inegiR](https://github.com/Eflores89/inegiR) but Banxico has other interesting series exclusive to them, like financial loans or money in circulation, which I encourage everyone to check out!  
+## Inicio rápido en español
 
-[Tweet](https://twitter.com/eflores89) me up if you have any suggestions / improvements.
+Esta contribución en desarrollo consulta la API REST del SIE y requiere un token personal
+registrado en el portal de Banxico. Configure `BANXICO_TOKEN` en su entorno local
+o use `banxico_set_token()` durante la sesión. No guarde credenciales en scripts.
+
+```r
+library(banxicoR)
+# Requiere BANXICO_TOKEN configurado localmente:
+datos <- banxico_data("SF43718", start_date = "2025-01-01",
+                      end_date = "2025-12-31", language = "es")
+reciente <- banxico_latest("SF43718")
+ficha <- banxico_metadata("SF43718")
+```
+
+`period` y `value_raw` conservan el texto original; `date` es de clase Date y
+`value` es numérico. Las observaciones no disponibles se conservan con `NA`.
+En las funciones anteriores, `banxico_series()` usa `Dates`, mientras que
+`banxico_series2()` usa `Date`. Los campos históricos de metadatos que la API
+no proporciona quedan como `NA`. `BanxicoCatalog` conserva el catálogo histórico
+en español, sin prometer cobertura completa ni actualización.
+
+See [the shared interface](docs/shared-interface.md) for comparison with inegiR.
+Before any release, choose and verify an active release maintainer; the upstream
+maintainer attribution is preserved and does not imply their approval.

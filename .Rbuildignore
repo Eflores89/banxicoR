@@ -1,3 +1,14 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
-README.md
+^\.agents$
+^\.aws$
+^\.codex$
+^\.superpowers$
+^docs/superpowers$
+^dist$
+^.*\.Rcheck$
+^banxicoR_.*\.tar\.gz$
+^cran-comments\.md$
+^docs$
+^\.github$
+^check$

@@ -1,0 +1,53 @@
+test_that("public data operations route endpoints and preserve ordered observations", {
+  suffixes <- character()
+  local_mocked_bindings(bmx_fetch = function(ids, suffix, token, language) {
+    suffixes <<- c(suffixes, suffix)
+    lapply(rev(ids), function(id) bmx_fixture(id, datos = list(
+      bmx_observation("02/10/2026", "N/E"), bmx_observation("01/10/2026", "1"))))
+  })
+  x <- banxico_data(c("SF2", "SF1"), token = "synthetic-token")
+  expect_identical(x$series_id, c("SF2", "SF2", "SF1", "SF1"))
+  expect_identical(x$date, rep(as.Date(c("2026-10-01", "2026-10-02")), 2))
+  expect_identical(x$value, c(1, NA_real_, 1, NA_real_))
+  expect_identical(x$value_raw, c("1", "N/E", "1", "N/E"))
+  expect_identical(names(x), c("provider", "series_id", "title", "period", "date", "value", "value_raw"))
+  banxico_data("SF1", "2026-10-01", "2026-10-02", "synthetic-token")
+  expect_identical(suffixes[2], "/datos/2026-10-01/2026-10-02")
+  expect_equal(nrow(banxico_data("SF1", start_date = "2026-10-02", token = "synthetic-token")), 1)
+  expect_equal(nrow(banxico_data("SF1", end_date = "2026-10-01", token = "synthetic-token")), 1)
+  expect_identical(suffixes[3:4], rep("/datos", 2))
+  banxico_latest("SF1", "synthetic-token")
+  expect_identical(tail(suffixes, 1), "/datos/oportuno")
+  m <- banxico_metadata(c("SF2", "SF1"), "synthetic-token")
+  expect_identical(m$series_id, c("SF2", "SF1"))
+  expect_identical(tail(suffixes, 1), "")
+})
+
+test_that("public APIs validate before fetching and return typed empty frames", {
+  local_mocked_bindings(bmx_fetch = function(...) stop("unexpected fetch"))
+  expect_error(banxico_data("bad/id", token = "synthetic-token"), class = "banxico_input_error")
+  expect_error(banxico_data("SF1", "2026-10-02", "2026-10-01", "synthetic-token"), class = "banxico_input_error")
+  expect_error(banxico_latest("SF1", "synthetic-token", "fr"), class = "banxico_input_error")
+  expect_error(banxico_metadata("SF1", ""), class = "banxico_authentication_error")
+  local_mocked_bindings(bmx_fetch = function(ids, ...) lapply(ids, bmx_fixture))
+  x <- banxico_data("SF1", token = "synthetic-token")
+  expect_equal(nrow(x), 0)
+  expect_s3_class(x$date, "Date")
+  expect_type(x$value, "double")
+  expect_equal(nrow(banxico_latest("SF1", "synthetic-token")), 0)
+})
+
+test_that("metadata preserves raw provider fields and filtering can return no rows", {
+  local_mocked_bindings(bmx_fetch = function(ids, suffix, ...) {
+    x <- bmx_fixture(ids, datos = list(bmx_observation()))
+    x$unidad <- "raw provider unit"
+    x$detalle <- list(code = "01")
+    list(x)
+  })
+  m <- banxico_metadata("SF1", "synthetic-token")
+  expect_identical(m$unidad, "raw provider unit")
+  expect_identical(m$detalle[[1]], list(code = "01"))
+  x <- banxico_data("SF1", "2027-01-01", token = "synthetic-token")
+  expect_equal(nrow(x), 0)
+  expect_s3_class(x$date, "Date")
+})
