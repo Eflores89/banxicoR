@@ -4,33 +4,56 @@
 \alias{series}
 \alias{banxico_series}
 \alias{banxico_series2}
-\title{Returns data series from BANXICO}
+\title{Returns data series from Banxico using the SIE REST API}
 \usage{
-banxico_series(series, metadata = FALSE, verbose = FALSE, mask = FALSE)
+banxico_series(
+  series,
+  metadata = FALSE,
+  verbose = FALSE,
+  mask = FALSE,
+  token = banxico_get_token(),
+  start_date = NULL,
+  end_date = NULL,
+  language = "es"
+)
 
-banxico_series2(series, token, metadata = FALSE, mask = FALSE)
+banxico_series2(
+  series,
+  token = banxico_get_token(),
+  metadata = FALSE,
+  mask = FALSE,
+  start_date = NULL,
+  end_date = NULL,
+  language = "es"
+)
 }
 \arguments{
-\item{series}{Series ID}
+\item{series}{A single character series identifier.}
 
-\item{metadata}{If TRUE returns list with metadata information}
+\item{metadata}{Logical; include legacy metadata (or Name in banxico_series2).}
 
-\item{verbose}{If TRUE prints steps while executing. Not available for banxico_series2}
+\item{verbose}{Logical; print a safe observation count after retrieval.}
 
-\item{mask}{if TRUE names data column "value", not the id}
+\item{mask}{Logical; use Values or Value instead of an ID-named value column.}
+
+\item{token}{API token, defaulting to \code{\link[=banxico_get_token]{banxico_get_token()}}.}
+
+\item{start_date, end_date}{Inclusive scalar Date or ISO YYYY-MM-DD bounds.}
+
+\item{language}{API locale, either "es" or "en".}
 }
 \value{
-data.frame
+banxico_series returns Dates and an ID-named numeric column (Values
+when masked), or a list with MetaData and Data. MetaData contains
+IndicatorName, IndicatorId, Units, DataType, Period and Frequency; fields
+unavailable from the API are NA. banxico_series2 returns Date and an
+ID-named numeric column (Value when masked), plus Name if requested.
+Missing observations remain rows with NA values.
 }
 \description{
-Returns data.frame with BANXICO data series. Use banxico_series2 for the new API (Beta mode).
-}
-\examples{
-# Bank of Mexico international reserves
-\dontrun{
-reserves <- banxico_series("SF110168")
-}
-
+Legacy adapters retain their original column names and argument positions.
+API access now requires a token: set BANXICO_TOKEN or call
+\code{\link[=banxico_set_token]{banxico_set_token()}}. For multiple series and raw values use \code{\link[=banxico_data]{banxico_data()}}.
 }
 \author{
 Eduardo Flores

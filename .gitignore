@@ -2,3 +2,11 @@
 .Rhistory
 .RData
 .Ruserdata
+dist/
+*.Rcheck/
+.agents/
+.aws/
+.codex/
+.superpowers/
+docs/superpowers/
+banxicoR_*.tar.gz

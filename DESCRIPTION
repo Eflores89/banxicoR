@@ -1,15 +1,24 @@
 Package: banxicoR
 Type: Package
 Title: Download Data from the Bank of Mexico
-Version: 0.9.0
-Author: Eduardo Flores
+Version: 0.9.0.9000
+Authors@R: person(given = "Eduardo", family = "Flores",
+    role = c("aut", "cre"), email = "eduardo@enelmargen.org")
+Author: Eduardo Flores [aut, cre]
 Maintainer: Eduardo Flores <eduardo@enelmargen.org>
-Description: Provides functions to scrape IQY calls to Bank of Mexico,
-    downloading and ordering the data conveniently.
+Description: Accesses observations and metadata from the Bank of Mexico
+    SIE REST API with authenticated requests, typed long-format results,
+    and compatibility adapters for legacy callers.
 License: CC0
+Encoding: UTF-8
 Imports:
-    rvest,
-    stringr,
-    xml2
+    httr2 (>= 1.1.1),
+    jsonlite,
+    stringr
 LazyData: TRUE
-RoxygenNote: 6.0.1
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Suggests:
+    testthat (>= 3.2.0),
+    withr
+Config/testthat/edition: 3
