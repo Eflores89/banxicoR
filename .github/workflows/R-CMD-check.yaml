@@ -1,0 +1,83 @@
+name: R-CMD-check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  R-CMD-check:
+    name: ${{ matrix.config.os }} (R ${{ matrix.config.r }})
+    runs-on: ${{ matrix.config.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {os: ubuntu-latest, r: release}
+          - {os: ubuntu-latest, r: oldrel-1}
+          - {os: ubuntu-latest, r: devel, http-user-agent: release}
+          - {os: windows-latest, r: release}
+          - {os: macos-latest, r: release}
+    env:
+      R_KEEP_PKG_SOURCE: yes
+      _R_CHECK_CRAN_INCOMING_: "false"
+      _R_CHECK_FORCE_SUGGESTS_: "true"
+      # No Banxico credential is provided: the package tests use mock responses.
+      BANXICO_TOKEN: ""
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+
+      - name: Set up R
+        uses: r-lib/actions/setup-r@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          http-user-agent: ${{ matrix.config.http-user-agent }}
+          use-public-rspm: true
+
+      - name: Install check dependencies
+        uses: r-lib/actions/setup-r-dependencies@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          extra-packages: any::rcmdcheck
+          needs: check
+
+      - name: Check package and run offline tests
+        uses: r-lib/actions/check-r-package@f9a764fea8d5c63df6ef9a5c7795bf7deb5d7e05 # v2
+        with:
+          args: 'c("--no-manual", "--as-cran")'
+          build_args: '"--no-manual"'
+          error-on: '"warning"'
+          check-dir: '"check"'
+          upload-results: never
+
+      - name: Record R and dependency versions
+        if: always()
+        shell: Rscript {0}
+        run: |
+          dir.create("check", showWarnings = FALSE)
+          capture.output({
+            sessionInfo()
+            print(installed.packages()[, c("Package", "Version", "Built")])
+          }, file = "check/session-info.txt")
+
+      - name: Save check evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: check-${{ matrix.config.os }}-${{ matrix.config.r }}
+          path: check/
+          retention-days: 14
+          if-no-files-found: warn

@@ -10,3 +10,5 @@
 ^banxicoR_.*\.tar\.gz$
 ^cran-comments\.md$
 ^docs$
+^\.github$
+^check$

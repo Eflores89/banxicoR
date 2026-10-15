@@ -1,5 +1,11 @@
 # banxicoR
 
+[![R-CMD-check](https://github.com/jadrk040507/banxicoR/actions/workflows/R-CMD-check.yaml/badge.svg?branch=master)](https://github.com/jadrk040507/banxicoR/actions/workflows/R-CMD-check.yaml)
+
+CI checks five OS/R combinations with offline tests and retains check logs and
+session versions. See [CI scope and evidence](docs/ci.md). Live Banxico API
+validation remains separate.
+
 Development contribution, version 0.9.0.9000, based on Eduardo Flores's CC0
 [banxicoR](https://github.com/Eflores89/banxicoR). This version uses Banxico's
 SIE REST API. The development fork is [jadrk040507/banxicoR](https://github.com/jadrk040507/banxicoR).
